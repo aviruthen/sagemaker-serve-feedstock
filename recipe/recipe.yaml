@@ -47,13 +47,19 @@ requirements:
     - pytest
 
 tests:
-  - python:
-      imports:
-        - sagemaker.serve
-      pip_check: true
-      python_version:
-        - ${{ python_min }}.*
-        - "*"
+  - script:
+      # sagemaker.serve's import chain reaches AIRHub, which builds boto3 clients
+      # at class-definition (import) time, so a region must be set or `import
+      # sagemaker.serve` raises NoRegionError. Upstream fix tracked in
+      # aws/sagemaker-python-sdk PR #6401; remove this once a release includes it.
+      env:
+        AWS_DEFAULT_REGION: us-east-1
+      content:
+        - python -c "import sagemaker.serve"
+        - pip check
+    requirements:
+      run:
+        - pip
 
 about:
   summary: SageMaker Serve package for model serving and deployment
